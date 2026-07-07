@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { z } from "zod";
 
 export const Route = createFileRoute("/enquiry")({
   head: () => ({
@@ -12,9 +13,68 @@ export const Route = createFileRoute("/enquiry")({
   component: Enquiry,
 });
 
+const schema = z.object({
+  name: z.string().trim().min(2, "A name, please.").max(80, "A little shorter."),
+  email: z.string().trim().email("A valid email, please.").max(160),
+  tel: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .refine((v) => !v || /^[+()0-9\s.\-]{6,}$/.test(v), "A telephone as it would be dialled."),
+  residence: z.string().trim().max(80).optional(),
+  time: z.string().trim().max(80).optional(),
+  country: z.string().trim().max(80).optional(),
+  message: z.string().trim().max(1000, "A shorter note, please.").optional(),
+});
+
+type FormValues = z.infer<typeof schema>;
+type FieldName = keyof FormValues;
+
+const FIELDS: { name: FieldName; label: string; type?: string; required?: boolean; placeholder?: string; className: string; }[] = [
+  { name: "name", label: "Name", required: true, className: "col-span-12 md:col-span-6" },
+  { name: "email", label: "Email", type: "email", required: true, className: "col-span-12 md:col-span-6" },
+  { name: "tel", label: "Telephone", type: "tel", className: "col-span-12 md:col-span-6" },
+  { name: "residence", label: "Preferred residence", placeholder: "The Atelier · The Salon · The Maison · Penthouse", className: "col-span-12 md:col-span-6" },
+  { name: "time", label: "Preferred contact time", placeholder: "Morning · Afternoon · Evening", className: "col-span-12 md:col-span-6" },
+  { name: "country", label: "Country", className: "col-span-12 md:col-span-6" },
+];
+
 function Enquiry() {
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
+  const [values, setValues] = useState<Record<FieldName, string>>({
+    name: "", email: "", tel: "", residence: "", time: "", country: "", message: "",
+  });
+  const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
+
+  const setValue = (name: FieldName, value: string) => {
+    setValues((v) => ({ ...v, [name]: value }));
+    if (errors[name]) setErrors((e) => ({ ...e, [name]: undefined }));
+  };
+
+  const validateField = (name: FieldName) => {
+    const field = schema.shape[name];
+    const result = field.safeParse(values[name] === "" ? undefined : values[name]);
+    setErrors((e) => ({ ...e, [name]: result.success ? undefined : result.error.issues[0]?.message }));
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = schema.safeParse(values);
+    if (!parsed.success) {
+      const fieldErrors: Partial<Record<FieldName, string>> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as FieldName | undefined;
+        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+      }
+      setErrors(fieldErrors);
+      return;
+    }
+    setPending(true);
+    setTimeout(() => { setPending(false); setSent(true); }, 1400);
+  };
+
   return (
     <section className="relative min-h-dvh bg-ivory pt-32">
       <div className="mx-auto max-w-[1200px] px-6 pb-32 md:px-14">
@@ -36,6 +96,8 @@ function Enquiry() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.4, ease: [0.22, 0.61, 0.36, 1] }}
                 className="border-y border-hairline py-24 text-center"
+                role="status"
+                aria-live="polite"
               >
                 <p className="eyebrow">Received</p>
                 <p className="mt-8 font-display text-4xl font-light italic leading-tight text-charcoal md:text-5xl">
@@ -44,6 +106,14 @@ function Enquiry() {
                 <p className="mx-auto mt-6 max-w-md text-[15px] leading-relaxed text-stone">
                   Our Private Client team will contact you shortly.
                 </p>
+                <motion.span
+                  aria-hidden
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 1.6, delay: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
+                  style={{ transformOrigin: "center" }}
+                  className="mx-auto mt-12 block h-px w-24 bg-bronze"
+                />
               </motion.div>
             ) : (
               <motion.form
@@ -52,28 +122,41 @@ function Enquiry() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.8 }}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setPending(true);
-                  setTimeout(() => { setPending(false); setSent(true); }, 1200);
-                }}
+                onSubmit={onSubmit}
+                noValidate
                 className="grid grid-cols-12 gap-x-8 gap-y-12"
               >
-                <Field label="Name" name="name" required className="col-span-12 md:col-span-6" />
-                <Field label="Email" name="email" type="email" required className="col-span-12 md:col-span-6" />
-                <Field label="Telephone" name="tel" type="tel" className="col-span-12 md:col-span-6" />
-                <Field label="Preferred residence" name="residence" placeholder="The Atelier · The Salon · The Maison · Penthouse" className="col-span-12 md:col-span-6" />
-                <Field label="Preferred contact time" name="time" placeholder="Morning · Afternoon · Evening" className="col-span-12 md:col-span-6" />
-                <Field label="Country" name="country" className="col-span-12 md:col-span-6" />
+                {FIELDS.map((f) => (
+                  <Field
+                    key={f.name}
+                    label={f.label}
+                    name={f.name}
+                    type={f.type}
+                    required={f.required}
+                    placeholder={f.placeholder}
+                    className={f.className}
+                    value={values[f.name] ?? ""}
+                    error={errors[f.name]}
+                    onChange={(v) => setValue(f.name, v)}
+                    onBlur={() => validateField(f.name)}
+                  />
+                ))}
 
                 <div className="col-span-12">
-                  <label className="eyebrow block">Message</label>
+                  <label htmlFor="message" className="eyebrow block">Message</label>
                   <textarea
+                    id="message"
                     name="message"
                     rows={4}
-                    className="mt-4 w-full resize-none border-0 border-b border-hairline bg-transparent pb-3 font-display text-2xl font-light italic text-charcoal placeholder:text-stone/50 focus:border-bronze focus:outline-none focus:ring-0"
+                    value={values.message ?? ""}
+                    onChange={(e) => setValue("message", e.target.value)}
+                    onBlur={() => validateField("message")}
+                    aria-invalid={!!errors.message}
+                    aria-describedby={errors.message ? "message-error" : undefined}
+                    className={`mt-4 w-full resize-none border-0 border-b bg-transparent pb-3 font-display text-2xl font-light italic text-charcoal placeholder:text-stone/50 focus:outline-none focus:ring-0 ${errors.message ? "border-bronze focus:border-bronze" : "border-hairline focus:border-bronze"}`}
                     placeholder="A few words…"
                   />
+                  <FieldError id="message-error" message={errors.message} />
                 </div>
 
                 <div className="col-span-12 mt-6 flex flex-wrap items-center justify-between gap-6 border-t border-hairline pt-8">
@@ -100,20 +183,51 @@ function Enquiry() {
 
 function Field({
   label, name, type = "text", required, placeholder, className = "",
+  value, error, onChange, onBlur,
 }: {
   label: string; name: string; type?: string; required?: boolean; placeholder?: string; className?: string;
+  value: string; error?: string; onChange: (v: string) => void; onBlur: () => void;
 }) {
+  const errorId = `${name}-error`;
   return (
     <div className={className}>
-      <label htmlFor={name} className="eyebrow block">{label}{required && <span className="ml-1 text-bronze">·</span>}</label>
+      <label htmlFor={name} className="eyebrow block">
+        {label}{required && <span className="ml-1 text-bronze">·</span>}
+      </label>
       <input
         id={name}
         name={name}
         type={type}
         required={required}
         placeholder={placeholder}
-        className="mt-4 w-full border-0 border-b border-hairline bg-transparent pb-3 font-display text-2xl font-light italic text-charcoal placeholder:text-stone/50 focus:border-bronze focus:outline-none focus:ring-0"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
+        className={`mt-4 w-full border-0 border-b bg-transparent pb-3 font-display text-2xl font-light italic text-charcoal placeholder:text-stone/50 focus:outline-none focus:ring-0 ${error ? "border-bronze focus:border-bronze" : "border-hairline focus:border-bronze"}`}
       />
+      <FieldError id={errorId} message={error} />
     </div>
+  );
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  return (
+    <AnimatePresence>
+      {message ? (
+        <motion.p
+          id={id}
+          role="alert"
+          initial={{ opacity: 0, y: -2 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 0.61, 0.36, 1] }}
+          className="mt-3 text-[11px] uppercase tracking-[0.28em] text-bronze"
+        >
+          {message}
+        </motion.p>
+      ) : null}
+    </AnimatePresence>
   );
 }
