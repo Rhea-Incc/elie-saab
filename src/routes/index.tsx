@@ -292,44 +292,17 @@ function Landscape() {
 /* CHAPTER V — LIVING SPACES                           */
 /* ————————————————————————————————————————————————— */
 
-const residences = [
-  {
-    code: "I",
-    name: "The Atelier",
-    area: "182 m²",
-    beds: "2 Bedrooms",
-    copy: "A private study of morning light — natural stone, oak, linen — softened by curtains that move with the day.",
-    image: A.videos[0],
-    poster: A.facade,
-  },
-  {
-    code: "II",
-    name: "The Salon",
-    area: "264 m²",
-    beds: "3 Bedrooms",
-    copy: "A drawing room suspended within the lattice, opening onto a terrace of quiet green.",
-    image: A.videos[1],
-    poster: A.amenity,
-  },
-  {
-    code: "III",
-    name: "The Maison",
-    area: "412 m²",
-    beds: "4 Bedrooms",
-    copy: "A duplex residence with private garden and library — a house within the tower.",
-    image: A.videos[2],
-    poster: A.rain,
-  },
-  {
-    code: "IV",
-    name: "The Couture Penthouse",
-    area: "820 m²",
-    beds: "5 Bedrooms",
-    copy: "A singular crown residence with a sky garden, reflection pool, and private lift.",
-    image: A.videos[3],
-    poster: A.aerial,
-  },
-];
+import { RESIDENCES } from "@/lib/residences";
+
+const residences = RESIDENCES.map((r) => ({
+  code: r.code,
+  name: r.name,
+  area: r.area,
+  beds: r.beds,
+  copy: r.copy,
+  image: r.video,
+  poster: r.poster,
+}));
 
 function Residences() {
   const [i, setI] = useState(0);
