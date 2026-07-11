@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
+import { RESIDENCES } from "@/lib/residences";
 
 export const Route = createFileRoute("/enquiry")({
   head: () => ({
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/enquiry")({
   component: Enquiry,
 });
 
+const RESIDENCE_NAMES = RESIDENCES.map((r) => r.name) as [string, ...string[]];
+
 const schema = z.object({
   name: z.string().trim().min(2, "A name, please.").max(80, "A little shorter."),
   email: z.string().trim().email("A valid email, please.").max(160),
@@ -22,7 +25,12 @@ const schema = z.object({
     .max(40)
     .optional()
     .refine((v) => !v || /^[+()0-9\s.\-]{6,}$/.test(v), "A telephone as it would be dialled."),
-  residence: z.string().trim().max(80).optional(),
+  residence: z
+    .string()
+    .trim()
+    .max(80)
+    .optional()
+    .refine((v) => !v || RESIDENCE_NAMES.includes(v), "Please choose from the collection."),
   time: z.string().trim().max(80).optional(),
   country: z.string().trim().max(80).optional(),
   message: z.string().trim().max(1000, "A shorter note, please.").optional(),
@@ -35,10 +43,10 @@ const FIELDS: { name: FieldName; label: string; type?: string; required?: boolea
   { name: "name", label: "Name", required: true, className: "col-span-12 md:col-span-6" },
   { name: "email", label: "Email", type: "email", required: true, className: "col-span-12 md:col-span-6" },
   { name: "tel", label: "Telephone", type: "tel", className: "col-span-12 md:col-span-6" },
-  { name: "residence", label: "Preferred residence", placeholder: "The Atelier · The Salon · The Maison · Penthouse", className: "col-span-12 md:col-span-6" },
   { name: "time", label: "Preferred contact time", placeholder: "Morning · Afternoon · Evening", className: "col-span-12 md:col-span-6" },
   { name: "country", label: "Country", className: "col-span-12 md:col-span-6" },
 ];
+
 
 function Enquiry() {
   const [sent, setSent] = useState(false);
@@ -142,6 +150,15 @@ function Enquiry() {
                   />
                 ))}
 
+                <ResidenceSelect
+                  value={values.residence ?? ""}
+                  error={errors.residence}
+                  onChange={(v) => setValue("residence", v)}
+                  onBlur={() => validateField("residence")}
+                />
+
+
+
                 <div className="col-span-12">
                   <label htmlFor="message" className="eyebrow block">Message</label>
                   <textarea
@@ -231,3 +248,45 @@ function FieldError({ id, message }: { id: string; message?: string }) {
     </AnimatePresence>
   );
 }
+
+function ResidenceSelect({
+  value, error, onChange, onBlur,
+}: {
+  value: string; error?: string; onChange: (v: string) => void; onBlur: () => void;
+}) {
+  const errorId = "residence-error";
+  return (
+    <div className="col-span-12 md:col-span-6">
+      <label htmlFor="residence" className="eyebrow block">
+        Preferred residence
+      </label>
+      <div className={`relative mt-4 border-0 border-b ${error ? "border-bronze" : "border-hairline focus-within:border-bronze"}`}>
+        <select
+          id="residence"
+          name="residence"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
+          className={`w-full appearance-none bg-transparent pb-3 pr-8 font-display text-2xl font-light italic focus:outline-none focus:ring-0 ${value ? "text-charcoal" : "text-stone/60"}`}
+        >
+          <option value="">Select from the collection…</option>
+          {RESIDENCES.map((r) => {
+            const unavailable = r.availability === "Reserved";
+            return (
+              <option key={r.code} value={r.name} disabled={unavailable}>
+                {r.name} — {r.area} · {r.availability}
+              </option>
+            );
+          })}
+        </select>
+        <span aria-hidden className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-[0.32em] text-stone">
+          ▾
+        </span>
+      </div>
+      <FieldError id={errorId} message={error} />
+    </div>
+  );
+}
+
