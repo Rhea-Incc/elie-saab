@@ -74,7 +74,7 @@ function Residences() {
                   <dt className="eyebrow">Area</dt><dd className="text-charcoal">{r.area}</dd>
                   <dt className="eyebrow">Configuration</dt><dd className="text-charcoal">{r.beds}</dd>
                   <dt className="eyebrow">Orientation</dt><dd className="text-charcoal">{r.orient}</dd>
-                  <dt className="eyebrow">Availability</dt><dd className="text-charcoal italic">On enquiry</dd>
+                  <dt className="eyebrow">Availability</dt><dd className="text-charcoal italic">{r.availability}</dd>
                 </dl>
                 <div className="mt-12 flex flex-wrap items-center gap-8">
                   <button className="border-b border-charcoal pb-1 text-[10px] uppercase tracking-[0.32em] hover:border-bronze hover:text-bronze">Download Brochure</button>
