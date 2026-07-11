@@ -5,6 +5,7 @@ import { A } from "@/lib/assets";
 import { Emblem } from "@/components/couture/Emblem";
 import { Reveal, ImageVeil } from "@/components/couture/Reveal";
 import { CoutureLink } from "@/components/couture/Button";
+import { RESIDENCES } from "@/lib/residences";
 
 export const Route = createFileRoute("/")({
   head: () => ({
