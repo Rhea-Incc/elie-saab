@@ -2,9 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Reveal } from "@/components/couture/Reveal";
-import { RESIDENCES } from "@/lib/residences";
-
-const list = RESIDENCES;
+import { useResidences } from "@/lib/use-residences";
 
 export const Route = createFileRoute("/residences")({
   head: () => ({
@@ -17,6 +15,7 @@ export const Route = createFileRoute("/residences")({
 });
 
 function Residences() {
+  const list = useResidences();
   const [i, setI] = useState(0);
   const r = list[i];
   return (

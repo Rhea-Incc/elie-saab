@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { RESIDENCES } from "@/lib/residences";
+import { useResidences } from "@/lib/use-residences";
 
 export const Route = createFileRoute("/enquiry")({
   head: () => ({
@@ -272,7 +273,7 @@ function ResidenceSelect({
           className={`w-full appearance-none bg-transparent pb-3 pr-8 font-display text-2xl font-light italic focus:outline-none focus:ring-0 ${value ? "text-charcoal" : "text-stone/60"}`}
         >
           <option value="">Select from the collection…</option>
-          {RESIDENCES.map((r) => {
+          {useResidences().map((r) => {
             const unavailable = r.availability === "Reserved";
             return (
               <option key={r.code} value={r.name} disabled={unavailable}>
