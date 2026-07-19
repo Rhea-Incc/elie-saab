@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { RESIDENCES } from "@/lib/residences";
+import { useResidences } from "@/lib/use-residences";
 
 export const Route = createFileRoute("/enquiry")({
   head: () => ({
