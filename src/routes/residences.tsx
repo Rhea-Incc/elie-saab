@@ -2,9 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Reveal } from "@/components/couture/Reveal";
-import { RESIDENCES } from "@/lib/residences";
-
-const list = RESIDENCES;
+import { useResidences } from "@/lib/use-residences";
 
 export const Route = createFileRoute("/residences")({
   head: () => ({
