@@ -15,6 +15,7 @@ export const Route = createFileRoute("/residences")({
 });
 
 function Residences() {
+  const list = useResidences();
   const [i, setI] = useState(0);
   const r = list[i];
   return (
